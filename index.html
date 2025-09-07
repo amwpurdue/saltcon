@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vacation Rental Properties Comparison</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <style>
+        .custom-div-icon {
+            background: transparent !important;
+            border: none !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .map-container {
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .property-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid;
+        }
+
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .property-card.vrbo { border-left-color: #FF5A5F; }
+        .property-card.airbnb { border-left-color: #FF5A5F; }
+        .property-card.luxury { border-left-color: #FFD700; }
+        .property-card.wander { border-left-color: #4ECDC4; }
+
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .property-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        .platform-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .vrbo { background-color: #0066CC; }
+        .airbnb { background-color: #FF5A5F; }
+        .luxury { background-color: #FFD700; color: #333; }
+        .wander { background-color: #4ECDC4; }
+
+        .property-location {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .property-location::before {
+            content: "📍";
+            margin-right: 5px;
+        }
+
+        .property-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .spec-item {
+            background: rgba(255,255,255,0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .spec-number {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            font-size: 1.1rem;
+        }
+
+        .spec-label {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+        }
+
+        .amenities {
+            margin: 15px 0;
+        }
+
+        .amenities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .amenity-tag {
+            background: #3498db;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .rating-stars {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .view-property {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        .view-property:hover {
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        .section h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .properties-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .property-specs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Vacation Rental Properties</h1>
+            <p>Premium Group Accommodations Across the Midwest</p>
+        </div>
+
+        <div class="section">
+            <h2>🗺️ Property Locations</h2>
+            <div id="map" class="map-container"></div>
+            <p style="text-align: center; color: #7f8c8d; margin-top: 10px;">
+                Click on map markers to see property details
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>📊 Quick Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Total Properties</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">6-11</div>
+                    <div class="stat-label">Bedroom Range</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">33</div>
+                    <div class="stat-label">Max Capacity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">States Covered</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🏘️ All Properties</h2>
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Properties will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Property data
+        const properties = [
+            {
+                name: "Indoor Pool, Lakefront, Indoor Pickleball",
+                platform: "VRBO",
+                location: "Union City, MI",
+                bedrooms: 8,
+                bathrooms: "5+",
+                sleeps: 30,
+                sqft: 9563,
+                amenities: ["Indoor pool", "Lakefront", "Indoor pickleball", "Waterslide"],
+                rating: "10/10",
+                url: "https://www.vrbo.com/2764521",
+                lat: 42.063,
+                lng: -85.138,
+                platformClass: "vrbo",
+                image: "https://media.vrbo.com/lodging/78000000/77140000/77140000/77139928/49f219f3.jpg?impolicy=resizecrop&rw=598&ra=fit"
+            },
+            {
+                name: "Family Retreat with Saltwater Pool",
+                platform: "VRBO",
+                location: "Fort Recovery, OH",
+                bedrooms: 7,
+                bathrooms: "3+",
+                sleeps: 25,
+                sqft: 3219,
+                amenities: ["Seasonal saltwater pool", "Gymnasium", "Basketball court", "Volleyball court"],
+                rating: "10/10",
+                url: "https://www.vrbo.com/2020956",
+                lat: 40.412,
+                lng: -84.786,
+                platformClass: "vrbo",
+                image: "https://media.vrbo.com/lodging/56000000/55620000/55612100/55612074/6f3d9f6c.jpg?impolicy=resizecrop&rw=598&ra=fit"
+            },
+            {
+                name: "Rustic Private Residence",
+                platform: "VRBO",
+                location: "St Anne, IL",
+                bedrooms: 11,
+                bathrooms: "0+",
+                sleeps: 33,
+                sqft: 11000,
+                amenities: ["Pool", "Rustic design", "Large property"],
+                rating: "10/10",
+                url: "https://www.vrbo.com/1849657",
+                lat: 41.010,
+                lng: -87.820,
+                platformClass: "vrbo",
+                image: "https://media.vrbo.com/lodging/46000000/45180000/45170600/45170536/94f9a99f.jpg?impolicy=resizecrop&rw=598&ra=fit"
+            },
+            {
+                name: "Luxury Lakefront Estate - Tir Na Nog",
+                platform: "VRBO",
+                location: "Lake Villa, IL",
+                bedrooms: 10,
+                bathrooms: 9,
+                sleeps: 21,
+                sqft: 12000,
+                amenities: ["9-hole pitch/putt course", "Tennis court", "Pool", "Lakefront"],
+                rating: "9.8/10",
+                url: "https://www.vrbo.com/366134",
+                lat: 42.420,
+                lng: -88.060,
+                platformClass: "vrbo",
+                image: "https://media.vrbo.com/lodging/28000000/27140000/27130800/27130762/db597533.jpg?impolicy=resizecrop&rw=598&ra=fit"
+            },
+            {
+                name: "Baronwood Oasis",
+                platform: "VRBO",
+                location: "Sheboygan, WI",
+                bedrooms: 7,
+                bathrooms: "4+",
+                sleeps: 16,
+                sqft: 10495,
+                amenities: ["Indoor pool/spa", "Arcades", "Sport court", "Game room"],
+                rating: "10/10",
+                url: "https://www.vrbo.com/4459894",
+                lat: 43.751,
+                lng: -87.714,
+                platformClass: "vrbo",
+                image: "https://media.vrbo.com/lodging/114000000/113530000/113521100/113521028/317db070.jpg?impolicy=resizecrop&rw=598&ra=fit"
+            },
+            {
+                name: "Home in Suamico",
+                platform: "Airbnb",
+                location: "Suamico, WI",
+                bedrooms: 6,
+                bathrooms: 5.5,
+                sleeps: "7 beds",
+                sqft: null,
+                amenities: ["Limited info available"],
+                rating: "4.89/5",
+                url: "https://www.airbnb.com/rooms/1245101953107829046",
+                lat: 44.634,
+                lng: -88.060,
+                platformClass: "airbnb",
+                image: "https://a0.muscache.com/im/pictures/prohost-api/Hosting-1245101953107829046/original/ec9597d4-6dd6-4af1-9d0e-19875acb45b8.jpeg?im_w=1200"
+            },
+            {
+                name: "Home in Monrovia",
+                platform: "Airbnb",
+                location: "Monrovia, IN",
+                bedrooms: 7,
+                bathrooms: 4.5,
+                sleeps: "11 beds",
+                sqft: null,
+                amenities: ["Limited info available"],
+                rating: "4.72/5",
+                url: "https://www.airbnb.com/rooms/979722685079418856",
+                lat: 39.579,
+                lng: -86.483,
+                platformClass: "airbnb",
+                image: "https://a0.muscache.com/im/pictures/prohost-api/Hosting-979722685079418856/original/bb985cd8-2f12-4f01-af09-5ffbeea61c81.jpeg?im_w=1200"
+            },
+            {
+                name: "Home in Logan",
+                platform: "Airbnb",
+                location: "Logan, OH",
+                bedrooms: 8,
+                bathrooms: 5.5,
+                sleeps: "11 beds",
+                sqft: null,
+                amenities: ["Limited info available"],
+                rating: "5.0/5",
+                url: "https://www.airbnb.com/rooms/1359446181174895853",
+                lat: 39.540,
+                lng: -82.407,
+                platformClass: "airbnb",
+                image: "https://a0.muscache.com/im/pictures/hosting/Hosting-U3RheVN1cHBseUxpc3Rpbmc6MTM1OTQ0NjE4MTE3NDg5NTg1Mw==/original/3037c39f-ea7a-40a2-8b1a-201a93af23ee.jpeg?im_w=1200"
+            },
+            {
+                name: "Cabin in Logan",
+                platform: "Airbnb",
+                location: "Logan, OH",
+                bedrooms: 8,
+                bathrooms: 8,
+                sleeps: "10 beds",
+                sqft: null,
+                amenities: ["Cabin style", "Limited info available"],
+                rating: "N/A",
+                url: "https://www.airbnb.com/rooms/1365842386547941613",
+                lat: 39.545,
+                lng: -82.410,
+                platformClass: "airbnb",
+                image: "https://a0.muscache.com/im/pictures/prohost-api/Hosting-1365842386547941613/original/88ebed49-d737-4ca6-9dc8-e82d40a52f3f.jpeg?im_w=1200"
+            },
+            {
+                name: "Maker's Lodge",
+                platform: "Ohio Luxury Lodging",
+                location: "Hocking Hills, OH",
+                bedrooms: 7,
+                bathrooms: 4.5,
+                sleeps: 24,
+                sqft: null,
+                amenities: ["Seasonal pool", "16-person hot tub", "Game room", "Theater", "Hiking trails", "Firebrick oven"],
+                rating: "N/A",
+                url: "https://www.ohioluxurylodging.com/makers-lodge/",
+                lat: 39.442,
+                lng: -82.539,
+                platformClass: "luxury",
+                image: "https://www.ohioluxurylodging.com/wp-content/uploads/2020/12/Makers-Lodge-Hocking-Hills-1024x658.jpg"
+            },
+            {
+                name: "Angel's Envy Lodge",
+                platform: "Ohio Luxury Lodging",
+                location: "Hocking Hills, OH",
+                bedrooms: 8,
+                bathrooms: 6.5,
+                sleeps: 24,
+                sqft: null,
+                amenities: ["All-season heated pool", "16-person hot tub", "Tiered theater", "Game room", "Hiking trails"],
+                rating: "N/A",
+                url: "https://www.ohioluxurylodging.com/angels-envy-lodge/",
+                lat: 39.445,
+                lng: -82.542,
+                platformClass: "luxury",
+                image: "https://www.ohioluxurylodging.com/wp-content/uploads/2020/05/Angels-Envy-1024x658.jpg"
+            },
+            {
+                name: "Wander Newton Lakefront",
+                platform: "Wander",
+                location: "Newton, WI",
+                bedrooms: 8,
+                bathrooms: 5.5,
+                sleeps: 18,
+                sqft: 10000,
+                amenities: ["Private outdoor pool", "Hot tub", "Lake access", "Tennis court", "Basketball court", "Gym", "Wine cellar"],
+                rating: "N/A",
+                url: "https://www.wander.com/property/wander-newton-lakefront",
+                lat: 43.9937,
+                lng: -87.7263,
+                platformClass: "wander",
+                image: "https://assets.wander.com/441328297456959495/1200.webp"
+            }
+        ];
+
+        // Initialize map
+        const map = L.map('map').setView([41.8781, -87.6298], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add markers to map
+        properties.forEach(property => {
+            const marker = L.marker([property.lat, property.lng]).addTo(map);
+
+            const popupContent = `
+                <div style="min-width: 200px;">
+                    <h4 style="margin: 0 0 10px 0; color: #2c3e50;">${property.name}</h4>
+                    <p style="margin: 0 0 5px 0;"><strong>📍 ${property.location}</strong></p>
+                    <p style="margin: 0 0 5px 0;">🛏️ ${property.bedrooms} BR | 🚿 ${property.bathrooms} BA</p>
+                    <p style="margin: 0 0 5px 0;">👥 Sleeps ${property.sleeps}</p>
+                    ${property.rating !== 'N/A' ? `<p style="margin: 0 0 10px 0;">⭐ ${property.rating}</p>` : ''}
+                    <a href="${property.url}" target="_blank" style="color: #667eea; font-weight: bold;">View Property →</a>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+        });
+
+        // Generate property cards
+        function generatePropertyCards() {
+            const grid = document.getElementById('propertiesGrid');
+
+            properties.forEach(property => {
+                const card = document.createElement('div');
+                card.className = `property-card ${property.platformClass}`;
+
+                const amenitiesTags = property.amenities.map(amenity =>
+                    `<span class="amenity-tag">${amenity}</span>`
+                ).join('');
+
+                const imageUrl = property.image || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzY2N0VFQSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzY2N0VFQSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI0MCI+8J+PsDwvdGV4dD48L3N2Zz4=";
+
+                card.innerHTML = `
+                    <div style="width: 100%; height: 200px; background: #f0f0f0; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <img src="${imageUrl}" alt="${property.name}" class="property-image" loading="lazy"
+                             onerror="console.error('Failed to load image for ${property.name}:', this.src); this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             onload="console.log('Image loaded successfully for:', '${property.name}'); this.parentElement.style.background='none';"
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px; position: absolute;">
+
+                        <div class="image-fallback" style="display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #666;">
+                            🏠
+                        </div>
+                    </div>
+
+                    <div class="property-header">
+                        <div>
+                            <div class="property-title">${property.name}</div>
+                            <div class="property-location">${property.location}</div>
+                        </div>
+                        <span class="platform-badge ${property.platformClass}">${property.platform}</span>
+                    </div>
+
+                    <div class="property-specs">
+                        <div class="spec-item">
+                            <span class="spec-number">${property.bedrooms}</span>
+                            <span class="spec-label">Bedrooms</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-number">${property.bathrooms}</span>
+                            <span class="spec-label">Bathrooms</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-number">${property.sleeps}</span>
+                            <span class="spec-label">Sleeps</span>
+                        </div>
+                        ${property.sqft ? `
+                        <div class="spec-item">
+                            <span class="spec-number">${property.sqft.toLocaleString()}</span>
+                            <span class="spec-label">Sq Ft</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="amenities">
+                        <div class="amenities-list">
+                            ${amenitiesTags}
+                        </div>
+                    </div>
+
+                    <div class="rating">
+                        ${property.rating !== 'N/A' ? `<span class="rating-stars">⭐ ${property.rating}</span>` : '<span></span>'}
+                        <a href="${property.url}" target="_blank" class="view-property">View Property</a>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Initialize the page
+        generatePropertyCards();
+    </script>
+</body>
+</html>
