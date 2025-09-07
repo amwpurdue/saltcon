@@ -323,6 +323,9 @@
                 amenities: ["Indoor pool", "Lakefront", "Indoor pickleball", "Waterslide"],
                 rating: "10/10",
                 url: "https://www.vrbo.com/2764521",
+                dateStart:"2026-06-11",
+                dateEnd:"2026-06-14",
+                totalPrice:10606,
                 lat: 42.063,
                 lng: -85.138,
                 platformClass: "vrbo",
@@ -355,6 +358,9 @@
                 amenities: ["Pool", "Rustic design", "Large property"],
                 rating: "10/10",
                 url: "https://www.vrbo.com/1849657",
+                dateStart:"2026-06-11",
+                dateEnd:"2026-06-14",
+                totalPrice:7717,
                 lat: 41.010,
                 lng: -87.820,
                 platformClass: "vrbo",
@@ -371,6 +377,9 @@
                 amenities: ["9-hole pitch/putt course", "Tennis court", "Pool", "Lakefront"],
                 rating: "9.8/10",
                 url: "https://www.vrbo.com/366134",
+                dateStart:"2026-06-04",
+                dateEnd:"2026-06-07",
+                totalPrice:11378,
                 lat: 42.420,
                 lng: -88.060,
                 platformClass: "vrbo",
@@ -451,6 +460,10 @@
                 amenities: ["Cabin style", "Limited info available"],
                 rating: "N/A",
                 url: "https://www.airbnb.com/rooms/1365842386547941613",
+                //10685
+                dateStart:"2026-06-18",
+                dateEnd:"2026-06-21",
+                totalPrice:10685,
                 lat: 39.545,
                 lng: -82.410,
                 platformClass: "airbnb",
@@ -545,6 +558,28 @@
 
                 const imageUrl = property.image || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzY2N0VFQSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzY2N0VFQSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI0MCI+8J+PsDwvdGV4dD48L3N2Zz4=";
 
+                // Format dates and price if available
+                const formatDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                };
+
+                const bookingInfo = property.dateStart && property.dateEnd && property.totalPrice ? `
+                    <div style="background: rgba(102, 126, 234, 0.1); padding: 12px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(102, 126, 234, 0.2);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="font-size: 0.9rem; color: #666;">📅 ${formatDate(property.dateStart)} - ${formatDate(property.dateEnd)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.85rem; color: #666;">Total Price:</span>
+                            <span style="font-size: 1.1rem; font-weight: bold; color: #2c3e50;">$${property.totalPrice.toLocaleString()}</span>
+                        </div>
+                    </div>
+                ` : '';
+
                 card.innerHTML = `
                     <div style="width: 100%; height: 200px; background: #f0f0f0; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; position: relative;">
                         <img src="${imageUrl}" alt="${property.name}" class="property-image" loading="lazy"
@@ -591,6 +626,8 @@
                             ${amenitiesTags}
                         </div>
                     </div>
+
+                    ${bookingInfo}
 
                     <div class="rating">
                         ${property.rating !== 'N/A' ? `<span class="rating-stars">⭐ ${property.rating}</span>` : '<span></span>'}
